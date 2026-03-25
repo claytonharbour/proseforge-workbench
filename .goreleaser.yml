@@ -1,0 +1,66 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: pfw
+    main: ./cmd/cli
+    binary: pfw
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+
+  - id: pfw-mcp
+    main: ./cmd/mcp
+    binary: pfw-mcp
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+
+archives:
+  - id: pfw
+    ids:
+      - pfw
+    formats:
+      - tar.gz
+    name_template: "pfw_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - id: pfw-mcp
+    ids:
+      - pfw-mcp
+    formats:
+      - tar.gz
+    name_template: "pfw-mcp_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  github:
+    owner: claytonharbour
+    name: proseforge-workbench
