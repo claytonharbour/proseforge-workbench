@@ -1,0 +1,111 @@
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/server"
+
+	"github.com/claytonharbour/proseforge-workbench/internal/api/gen"
+	"github.com/claytonharbour/proseforge-workbench/internal/review"
+)
+
+func registerReviewTools(s *server.MCPServer, r *clientResolver) {
+	// review_list
+	s.AddTool(
+		tool("review_list",
+			mcp.WithDescription("Stories where you've been invited to review but haven't responded. Returns review IDs for review_accept or review_decline."),
+			mcp.WithNumber("limit", mcp.Description("Max results (1-100, default 25)")),
+			mcp.WithToolAnnotation(mcp.ToolAnnotation{ReadOnlyHint: mcp.ToBoolPtr(true)}),
+		),
+		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			client, err := r.resolve(req)
+			if err != nil {
+				return toolError(err), nil
+			}
+			svc := review.NewService(client, review.WithLogger(r.logger))
+			limit := optionalIntArg(req, "limit", 25)
+			params := &gen.GetReviewsPendingParams{Limit: &limit}
+			result, err := svc.ListPending(ctx, params)
+			if err != nil {
+				return toolError(err, client), nil
+			}
+			return jsonResult(result)
+		},
+	)
+
+	// review_active
+	s.AddTool(
+		tool("review_active",
+			mcp.WithDescription("Find the active review for a story. Use for session recovery when you have story_id but lost the review_id."),
+			mcp.WithString("story_id", mcp.Required(), mcp.Description("Story ID")),
+			mcp.WithToolAnnotation(mcp.ToolAnnotation{ReadOnlyHint: mcp.ToBoolPtr(true)}),
+		),
+		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			client, err := r.resolve(req)
+			if err != nil {
+				return toolError(err), nil
+			}
+			svc := review.NewService(client, review.WithLogger(r.logger))
+			storyID, err := requireArg(req, "story_id")
+			if err != nil {
+				return toolError(err), nil
+			}
+			result, err := svc.ActiveReview(ctx, storyID)
+			if err != nil {
+				return toolError(err, client), nil
+			}
+			if result == nil {
+				return mcp.NewToolResultText("No active review for this story."), nil
+			}
+			return jsonResult(result)
+		},
+	)
+
+	// review_accept
+	s.AddTool(
+		tool("review_accept",
+			mcp.WithDescription("Accept a review assignment. Requires review_id from review_list."),
+			mcp.WithString("review_id", mcp.Required(), mcp.Description("Review ID")),
+		),
+		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			client, err := r.resolve(req)
+			if err != nil {
+				return toolError(err), nil
+			}
+			svc := review.NewService(client, review.WithLogger(r.logger))
+			id, err := requireArg(req, "review_id")
+			if err != nil {
+				return toolError(err), nil
+			}
+			if err := svc.Accept(ctx, id); err != nil {
+				return toolError(err, client), nil
+			}
+			return mcp.NewToolResultText(fmt.Sprintf("Review %s accepted.", id)), nil
+		},
+	)
+
+	// review_decline
+	s.AddTool(
+		tool("review_decline",
+			mcp.WithDescription("Decline a review assignment. Requires review_id from review_list."),
+			mcp.WithString("review_id", mcp.Required(), mcp.Description("Review ID")),
+		),
+		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			client, err := r.resolve(req)
+			if err != nil {
+				return toolError(err), nil
+			}
+			svc := review.NewService(client, review.WithLogger(r.logger))
+			id, err := requireArg(req, "review_id")
+			if err != nil {
+				return toolError(err), nil
+			}
+			if err := svc.Decline(ctx, id); err != nil {
+				return toolError(err, client), nil
+			}
+			return mcp.NewToolResultText(fmt.Sprintf("Review %s declined.", id)), nil
+		},
+	)
+}
