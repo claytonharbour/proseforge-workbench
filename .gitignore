@@ -1,0 +1,31 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+build/
+
+# Go
+*.out
+go.work
+go.work.sum
+
+# Environment files (contain API keys)
+.env
+.env.*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# GitHub sync staging
+.github-staging/
+
+# GoReleaser
+dist/
+
+# Mac
+.DS_Store
