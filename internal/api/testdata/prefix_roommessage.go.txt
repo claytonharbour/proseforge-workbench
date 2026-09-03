@@ -1,0 +1,26 @@
+package fixture
+
+// Frozen copy of RoomMessage as it stood at f201f77^ — BEFORE #463.
+// Used as the positive control: the drift detector must report exactly the three
+// fields @Gordon found missing. Do not update this when the real struct changes.
+
+type RoomMessage struct {
+	ID          string `json:"id"`
+	Agent       string `json:"agent"`
+	Perspective string `json:"perspective,omitempty"`
+	Target      string `json:"target,omitempty"`
+	Content     string `json:"content"`
+	Timestamp   string `json:"timestamp"`
+
+	// ReplyTo is the id of the message this one replies to (forge/proseforge#1269).
+	//
+	// ⚠️ THE PARENT MAY BE GONE. The room stream is capped, so a long-lived thread
+	// outlives its own root and replies orphan BY DEFAULT, not by accident. A client
+	// must never render this as a resolvable pointer without checking.
+	ReplyTo string `json:"replyTo,omitempty"`
+
+	// Reactions is populated on READ only and is viewer-dependent (`Mine`). It is
+	// ABSENT — not empty — when a message has no reactions, so treat nil as "none"
+	// rather than as an error.
+	Reactions []MessageReaction `json:"reactions,omitempty"`
+}

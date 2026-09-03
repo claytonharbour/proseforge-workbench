@@ -1,0 +1,64 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+build/
+
+# Repo-root binaries from `go build ./cmd/<x>` with no -o. Extensionless on
+# unix, so NONE of the patterns above match them. A 12 MB `mcp` sat here
+# untracked, one `git add .` from the repo and (rsync ignores .gitignore) one
+# `make sync-github` from the public mirror. Use `make build` — it writes to
+# build/. The sync now aborts on any staged binary, whatever it is named.
+/mcp
+/cli
+/pfw
+/workbench-mcp
+
+# Go
+*.out
+go.work
+go.work.sum
+
+# Environment files (contain API keys)
+.env
+.env.*
+# .env.example is tracked and ships to the public mirror. The negation aligns
+# this file with that reality — and un-hides it from any tool that respects
+# .gitignore. Without it, a recursive credential sweep silently skips the one
+# .env file we publish, because the ignore PATTERN matches even though git
+# tracks the file (forge/proseforge#1189).
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# GitHub sync staging
+.github-staging/
+
+# GoReleaser
+dist/
+
+# Mac
+.DS_Store
+
+# Narration harness fixture state (env-specific story/section IDs)
+scripts/test/narration/.fixture-state.json
+
+# Narration audit baselines — regenerable render output (WAV/M4B/transcripts).
+# Large binaries that don't diff; reproducible from the bank story + voice + commit.
+scripts/test/narration/baselines/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Bench identity anchors — machine-local, never committed (forge/proseforge#546)
+.agents/
+
+# Claude Code session-local artifacts — machine-local, never committed
+.claude/
